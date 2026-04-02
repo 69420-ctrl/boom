@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>EXPONENTIAL RAM VOID</title>
+    <style>
+        body { 
+            background: #000; color: #f00; 
+            font-family: 'Courier New', monospace; 
+            font-size: 10px; overflow: hidden;
+            word-break: break-all;
+        }
+        #stats {
+            position: fixed; top: 10px; left: 10px;
+            background: rgba(255,0,0,0.8); color: white;
+            padding: 10px; font-weight: bold; z-index: 100;
+        }
+    </style>
+</head>
+<body>
+    <div id="stats">Lines: 0</div>
+    <div id="display"></div>
+
+    <script>
+        const display = document.getElementById('display');
+        const stats = document.getElementById('stats');
+        
+        let currentAmount = 10;
+        const multiplier = 1.2; // Increase by 20% every tick
+        const chars = "0123456789ABCDEF";
+
+        function melt() {
+            // 1. DELETE: Clear the previous "junk"
+            display.innerText = "";
+
+            // 2. GROW: Calculate the new "Power" amount
+            currentAmount = Math.ceil(currentAmount * multiplier);
+            
+            // Update the UI counter (if the browser still has enough CPU for it)
+            stats.innerText = "Lines: " + currentAmount.toLocaleString();
+
+            // 3. ADD: Re-add the even LARGER chunk of code
+            let junk = "";
+            for (let i = 0; i < currentAmount; i++) {
+                // Building a massive string every 0.001s
+                junk += chars.charAt(Math.floor(Math.random() * chars.length));
+                if (i % 100 === 0) junk += "\n";
+            }
+            
+            display.innerText = junk;
+
+            // Trigger the next cycle (0.001s is the "speed of light" for browsers)
+            setTimeout(melt, 1);
+        }
+
+        melt();
+    </script>
+</body>
+</html>
